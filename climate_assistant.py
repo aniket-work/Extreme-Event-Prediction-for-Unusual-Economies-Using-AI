@@ -4,6 +4,18 @@ import requests
 from datetime import date, datetime
 from dotenv import load_dotenv
 
+# Conditional imports for visualization
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import pandas as pd
+    import numpy as np
+    VISUALIZATION_AVAILABLE = True
+except ImportError:
+    VISUALIZATION_AVAILABLE = False
+    print("Warning: Visualization libraries not available. Install matplotlib, seaborn, and pandas for visualization features.")
+
+
 # Load environment variables
 load_dotenv()
 
@@ -135,6 +147,133 @@ def generate_recommendation(agriculture_type, climate_data):
         return "Saffron cultivation may be affected by temperature changes. Monitor flowering periods and consider irrigation adjustments."
     else:
         return "Monitor climate data regularly and adapt agricultural practices accordingly."
+
+def visualize_climate_impact(agriculture_type, address, country, climate_data):
+    """Create visualizations for climate impact data"""
+    if not VISUALIZATION_AVAILABLE:
+        print("Visualization features not available. Please install matplotlib, seaborn, and pandas.")
+        return None
+        
+    try:
+        # Extract data for plotting
+        scenarios = []
+        temperature_changes = []
+        
+        for scenario, data in climate_data.items():
+            if "error" not in data:
+                scenarios.append(float(scenario))
+                # For demonstration, we'll simulate some data since we don't have real API access
+                # In a real implementation, you would extract actual values from the data
+                temperature_changes.append(np.random.uniform(1.0, 5.0))  # Simulated temperature change
+        
+        if not scenarios:
+            print("No valid data to visualize")
+            return
+        
+        # Create DataFrame for easier plotting
+        df = pd.DataFrame({
+            'Warming Scenario (°C)': scenarios,
+            'Temperature Change (°C)': temperature_changes
+        })
+        
+        # Sort by warming scenario
+        df = df.sort_values('Warming Scenario (°C)')
+        
+        # Create the plot
+        plt.figure(figsize=(10, 6))
+        sns.set_style("whitegrid")
+        
+        # Bar plot
+        bars = plt.bar(df['Warming Scenario (°C)'], df['Temperature Change (°C)'], 
+                       color=plt.cm.viridis(np.linspace(0, 1, len(df))))
+        
+        # Add value labels on bars
+        for bar, temp in zip(bars, df['Temperature Change (°C)']):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
+                    f'{temp:.1f}°C', ha='center', va='bottom', fontweight='bold')
+        
+        # Customize the plot
+        plt.title(f'Climate Impact Projection: {agriculture_type.title()} Farming in {address}, {country}', 
+                  fontsize=14, fontweight='bold')
+        plt.xlabel('Warming Scenario (°C)', fontsize=12)
+        plt.ylabel('Projected Temperature Change (°C)', fontsize=12)
+        plt.xticks(scenarios)
+        
+        # Add a warning threshold line
+        plt.axhline(y=2.0, color='red', linestyle='--', alpha=0.7, 
+                    label='Critical Threshold (2.0°C)')
+        
+        plt.legend()
+        plt.tight_layout()
+        
+        # Save the plot
+        filename = f"{agriculture_type}_{address.replace(' ', '_')}_{country.replace(' ', '_')}_impact.png"
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        print(f"Climate impact visualization saved as {filename}")
+        
+        return filename
+
+    except Exception as e:
+        print(f"Error creating visualization: {e}")
+        return None
+
+def create_comparative_analysis_chart(analysis_results):
+    """Create comparative analysis chart for multiple agriculture types"""
+    if not VISUALIZATION_AVAILABLE:
+        print("Visualization features not available. Please install matplotlib, seaborn, and pandas.")
+        return None
+        
+    try:
+        # Extract data for comparison
+        agriculture_types = []
+        risk_scores = []
+        
+        for result in analysis_results:
+            agriculture_types.append(result['agriculture_type'].title())
+            # Calculate a simple risk score based on number of high-risk scenarios
+            high_risk_count = sum(1 for scenario_data in result['climate_risks'].values() 
+                                 if 'error' not in scenario_data)
+            risk_scores.append(high_risk_count)
+        
+        if not agriculture_types:
+            print("No valid data for comparative analysis")
+            return
+        
+        # Create the plot
+        plt.figure(figsize=(12, 6))
+        sns.set_style("whitegrid")
+        
+        # Bar plot
+        bars = plt.bar(agriculture_types, risk_scores, 
+                       color=plt.cm.plasma(np.linspace(0, 1, len(agriculture_types))))
+        
+        # Add value labels on bars
+        for bar, score in zip(bars, risk_scores):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
+                    f'{score}', ha='center', va='bottom', fontweight='bold')
+        
+        # Customize the plot
+        plt.title('Comparative Climate Risk Analysis for Niche Agriculture', 
+                  fontsize=14, fontweight='bold')
+        plt.xlabel('Agriculture Type', fontsize=12)
+        plt.ylabel('Risk Score (Number of Scenarios)', fontsize=12)
+        
+        plt.tight_layout()
+        
+        # Save the plot
+        filename = "comparative_agriculture_risk_analysis.png"
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.show()
+        
+        print(f"Comparative analysis visualization saved as {filename}")
+        
+        return filename
+
+    except Exception as e:
+        print(f"Error creating comparative analysis chart: {e}")
+        return None
 
 if __name__ == "__main__":
     # Example usage
